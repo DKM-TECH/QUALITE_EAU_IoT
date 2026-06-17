@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Water Quality Dashboard</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<!-- ChartJS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Leaflet -->
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:#120021;
+    color:white;
+}
+
+.dashboard{
+    display:flex;
+    min-height:100vh;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar{
+    width:240px;
+    background:#0b0016;
+    padding:20px;
+    border-right:1px solid rgba(0,255,255,.1);
+}
+
+.logo{
+    font-size:26px;
+    color:#00ffff;
+    font-weight:bold;
+    margin-bottom:40px;
+}
+
+.sidebar ul{
+    list-style:none;
+}
+
+.sidebar li{
+    padding:15px;
+    margin-bottom:10px;
+    background:#16002d;
+    border-radius:10px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.sidebar li:hover{
+    background:#230045;
+}
+
+/* ================= MAIN ================= */
+
+.main{
+    flex:1;
+    padding:20px;
+}
+
+/* TOPBAR */
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.search{
+    width:350px;
+    padding:12px;
+    border:none;
+    border-radius:30px;
+    background:#220044;
+    color:white;
+}
+
+.title{
+    font-size:28px;
+    color:#00ffff;
+}
+
+/* ================= CARDS ================= */
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:#1a0033;
+    border-radius:15px;
+    padding:20px;
+    box-shadow:0 0 20px rgba(0,255,255,.1);
+}
+
+.card h3{
+    font-size:14px;
+    color:#9fcfff;
+    margin-bottom:15px;
+    text-transform:uppercase;
+}
+
+.value{
+    font-size:36px;
+    color:#00ffff;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+.progress{
+    width:100%;
+    height:10px;
+    background:#2d0055;
+    border-radius:20px;
+    overflow:hidden;
+}
+
+.progress div{
+    width:0%;
+    height:100%;
+    transition:1s;
+}
+
+#tdsBar{
+    background:linear-gradient(90deg,#00ffff,#00ff99);
+}
+
+#phBar{
+    background:linear-gradient(90deg,#00ff99,#ffff00);
+}
+
+#tempBar{
+    background:linear-gradient(90deg,#ff9900,#ff3333);
+}
+
+#status{
+    font-size:28px;
+    font-weight:bold;
+}
+
+/* ================= GRID ================= */
+
+.content{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:20px;
+    margin-top:20px;
+}
+
+.section{
+    background:#1a0033;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 20px rgba(0,255,255,.08);
+}
+
+/* ================= CHART ================= */
+
+.chart-container{
+    margin-top:20px;
+}
+
+canvas{
+    background:white;
+    border-radius:10px;
+    padding:10px;
+}
+
+/* ================= TABLE ================= */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+th{
+    background:#00ffff;
+    color:black;
+    padding:10px;
+}
+
+td{
+    padding:10px;
+    text-align:center;
+}
+
+tr:nth-child(even){
+    background:#250045;
+}
+
+/* ================= MAP ================= */
+
+#map{
+    height:400px;
+    border-radius:10px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:1000px){
+
+.content{
+    grid-template-columns:1fr;
+}
+
+.sidebar{
+    display:none;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<div class="logo">💧 Water IoT</div>
+
+<ul>
+<li>🏠 Dashboard</li>
+<li>📊 Monitoring</li>
+<li>📍 Carte</li>
+<li>📜 Historique</li>
+<li>⚙ Paramètres</li>
+</ul>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<div class="topbar">
+<div class="title">Water Quality Dashboard</div>
+<input class="search" placeholder="Recherche...">
+</div>
+
+<!-- METRICS -->
+<div class="cards">
+
+<div class="card">
+<h3>TDS</h3>
+<div class="value" id="tdsValue">0 ppm</div>
+<div class="progress">
+<div id="tdsBar"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>PH</h3>
+<div class="value" id="phValue">0</div>
+<div class="progress">
+<div id="phBar"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>TEMPÉRATURE</h3>
+<div class="value" id="tempValue">0 °C</div>
+<div class="progress">
+<div id="tempBar"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>ÉTAT DE L'EAU</h3>
+<div id="status">WAITING...</div>
+</div>
+
+</div>
+
+<!-- CHART -->
+<div class="section chart-container">
+<h2>Graphique Temps Réel</h2>
+<canvas id="historyChart"></canvas>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<div class="section">
+
+<h2>Historique des mesures</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Heure</th>
+<th>pH</th>
+<th>TDS</th>
+<th>Temp</th>
+<th>Statut</th>
+</tr>
+</thead>
+
+<tbody id="historyTable"></tbody>
+
+</table>
+
+</div>
+
+<div class="section">
+
+<h2>Localisation</h2>
+
+<div id="map"></div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* ================= FIREBASE ================= */
+
+const firebaseConfig = {
+apiKey: "YOUR_API_KEY",
+databaseURL: "https://air-zando-default-rtdb.firebaseio.com/"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ================= STATUS ================= */
+
+function getStatus(ph,tds){
+
+if(ph>=6.5 && ph<=8.5 && tds<=1000)
+return {text:"EAU NORMALE",color:"#00ff99"};
+
+if(ph<6 || ph>9 || tds>1500)
+return {text:"EAU DANGEREUSE",color:"#ff4444"};
+
+return {text:"QUALITÉ MOYENNE",color:"#ffd700"};
+
+}
+
+/* ================= CHART ================= */
+
+const ctx=document.getElementById("historyChart");
+
+const historyChart=new Chart(ctx,{
+type:"line",
+data:{
+labels:[],
+datasets:[
+{
+label:"TDS",
+data:[],
+borderColor:"blue",
+tension:0.4
+},
+{
+label:"pH",
+data:[],
+borderColor:"green",
+tension:0.4
+},
+{
+label:"Température",
+data:[],
+borderColor:"red",
+tension:0.4
+}
+]
+},
+options:{
+responsive:true
+}
+});
+
+let historyData=[];
+
+/* ================= FIREBASE LISTENER ================= */
+
+db.ref("/sensor_data/latest").on("value",(snapshot)=>{
+
+const data=snapshot.val();
+
+if(!data) return;
+
+const tds=parseFloat(data.tds || 0);
+const ph=parseFloat(data.ph || 0);
+const temp=parseFloat(data.temperature || 0);
+
+/* VALEURS */
+
+document.getElementById("tdsValue").innerHTML=
+tds.toFixed(0)+" ppm";
+
+document.getElementById("phValue").innerHTML=
+ph.toFixed(2);
+
+document.getElementById("tempValue").innerHTML=
+temp.toFixed(1)+" °C";
+
+/* BARS */
+
+document.getElementById("tdsBar").style.width=
+Math.min((tds/2000)*100,100)+"%";
+
+document.getElementById("phBar").style.width=
+Math.min((ph/14)*100,100)+"%";
+
+document.getElementById("tempBar").style.width=
+Math.min((temp/50)*100,100)+"%";
+
+/* STATUS */
+
+const result=getStatus(ph,tds);
+
+document.getElementById("status").innerHTML=
+result.text;
+
+document.getElementById("status").style.color=
+result.color;
+
+/* CHART */
+
+const time=new Date().toLocaleTimeString();
+
+historyChart.data.labels.push(time);
+
+historyChart.data.datasets[0].data.push(tds);
+historyChart.data.datasets[1].data.push(ph);
+historyChart.data.datasets[2].data.push(temp);
+
+if(historyChart.data.labels.length>20){
+
+historyChart.data.labels.shift();
+
+historyChart.data.datasets.forEach(ds=>{
+ds.data.shift();
+});
+
+}
+
+historyChart.update();
+
+/* TABLE */
+
+const now=new Date();
+
+historyData.unshift({
+
+date:now.toLocaleDateString(),
+time:now.toLocaleTimeString(),
+ph:ph,
+tds:tds,
+temp:temp,
+status:result.text,
+color:result.color
+
+});
+
+if(historyData.length>15)
+historyData.pop();
+
+renderTable();
+
+});
+
+/* ================= TABLE ================= */
+
+function renderTable(){
+
+const table=
+document.getElementById("historyTable");
+
+table.innerHTML="";
+
+historyData.forEach(item=>{
+
+table.innerHTML+=`
+<tr>
+<td>${item.date}</td>
+<td>${item.time}</td>
+<td>${item.ph.toFixed(2)}</td>
+<td>${item.tds.toFixed(2)}</td>
+<td>${item.temp.toFixed(1)}°C</td>
+<td style="color:${item.color};font-weight:bold">
+${item.status}
+</td>
+</tr>
+`;
+
+});
+
+}
+
+/* ================= MAP ================= */
+
+const lat=-4.325;
+const lon=15.322;
+
+const map=L.map('map').setView([lat,lon],13);
+
+L.tileLayer(
+'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+maxZoom:19
+}
+).addTo(map);
+
+const marker=L.marker([lat,lon]).addTo(map);
+
+marker.bindPopup("💧 Station IoT Eau");
+
+</script>
+
+</body>
+</html>

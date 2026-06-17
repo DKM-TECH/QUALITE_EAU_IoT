@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Water Quality Dashboard</title>
+<style>/* ==========================
+   GLOBAL
+========================== */
+
+:root{
+    --bg:#120021;
+    --sidebar:#0b0016;
+    --card:#1a0935;
+    --card-light:#241046;
+    --cyan:#00f5ff;
+    --green:#00ff88;
+    --orange:#ff9800;
+    --red:#ff5252;
+    --text:#ffffff;
+    --text-soft:#bdb7e8;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:linear-gradient(135deg,#0e001b,#17002d,#10001d);
+    color:var(--text);
+    font-family:"Segoe UI",sans-serif;
+    overflow-x:hidden;
+}
+
+.dashboard{
+    display:flex;
+    min-height:100vh;
+}
+
+/* ==========================
+   SIDEBAR
+========================== */
+.sidebar {
+    width: 240px;
+    background: var(--panel);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.logo {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu button {
+    padding: 10px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 8px;
+    color: var(--text);
+}
+
+.menu button.active {
+    background: var(--accent);
+    color: #000;
+}
+
+.status {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: lime;
+    box-shadow: 0 0 8px lime;
+}
+/* ==========================
+   MAIN
+========================== */
+
+.main{
+    flex:1;
+    padding:15px;
+}
+
+/* ==========================
+   TOP BAR
+========================== */
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
+}
+
+.search-box input{
+    width:280px;
+    height:40px;
+    border:none;
+    border-radius:25px;
+    background:var(--card);
+    color:white;
+    padding:0 15px;
+    outline:none;
+}
+
+.user-panel{
+    display:flex;
+    gap:10px;
+}
+
+.notification,
+.profile{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:var(--card);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* ==========================
+   KPI TOP
+========================== */
+
+.top-cards{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+}
+
+.mini-card{
+    height:80px;
+    padding:12px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    background:linear-gradient(
+        135deg,
+        #221043,
+        #17002d
+    );
+
+    border:1px solid rgba(255,255,255,.04);
+
+    box-shadow:
+        0 4px 20px rgba(0,0,0,.25);
+}
+.mini-card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:3px;
+    background:var(--cyan);
+}
+
+.card-icon{
+    width:48px;
+    height:48px;
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:18px;
+}
+.card-right span{
+    font-size:10px;
+    letter-spacing:1px;
+    color:#a9a2d8;
+}
+
+.card-right h2{
+    font-size:20px;
+    margin-top:3px;
+    margin-bottom:2px;
+}
+
+.card-info h4{
+    font-size:11px;
+    letter-spacing:1px;
+    color:var(--text-soft);
+    margin-bottom:5px;
+}
+
+.metric-value{
+    font-size:22px;
+    font-weight:700;
+    color:var(--cyan);
+}
+
+.mini-progress{
+    margin-top:10px;
+    height:5px;
+    background:#2c1750;
+    border-radius:10px;
+    overflow:hidden;
+}
+.big-chart-card{
+    background:#1a0935;
+
+    border-radius:20px;
+
+    padding:18px;
+
+    margin-bottom:12px;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,.25);
+}
+
+#historyChart{
+    height:220px !important;
+}
+
+#tdsBar,
+#phBar,
+#tempBar{
+    width:0%;
+    height:100%;
+    transition:1s;
+}
+
+#tdsBar{background:var(--cyan);}
+#phBar{background:var(--green);}
+#tempBar{background:var(--orange);}
+
+.status-card,
+.station-card{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+#status{
+    font-size:18px;
+    font-weight:700;
+}
+
+.station-indicator{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:8px;
+}
+
+.led{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 10px var(--green);
+}
+
+/* ==========================
+   BIG CHART
+========================== */
+
+.big-chart-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.section-title{
+    color:var(--cyan);
+    font-size:15px;
+    margin-bottom:10px;
+    font-weight:600;
+}
+
+#historyChart{
+    height:250px !important;
+    max-height:250px;
+}
+
+/* ==========================
+   SECOND ROW
+========================== */
+
+.second-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.panel-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+}
+
+.stats-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+}
+
+.stat-item{
+    background:var(--card-light);
+    padding:10px;
+    border-radius:10px;
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+}
+
+/* ==========================
+   HISTORY + MAP
+========================== */
+
+.third-row{
+    display:grid;
+    grid-template-columns:1.5fr 1fr;
+    gap:10px;
+    margin-bottom:15px;
+}
+
+.history-card,
+.map-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:15px;
+}
+
+/* ==========================
+   TABLE
+========================== */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    background:var(--cyan);
+    color:black;
+    padding:8px;
+    font-size:12px;
+}
+
+td{
+    padding:7px;
+    font-size:11px;
+    text-align:center;
+    border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+tr:hover{
+    background:#220043;
+}
+
+/* ==========================
+   MAP
+========================== */
+
+#map{
+    height:220px;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+/* ==========================
+   KPI CIRCLES
+========================== */
+
+.bottom-kpis{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+}
+
+.circle-card{
+    background:var(--card);
+    border-radius:18px;
+    padding:12px;
+    text-align:center;
+}
+
+.circle{
+    width:85px;
+    height:85px;
+    border-radius:50%;
+    border:5px solid var(--cyan);
+    margin:auto;
+    margin-bottom:10px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:var(--cyan);
+    font-size:18px;
+    font-weight:700;
+
+    box-shadow:
+        0 0 15px rgba(0,245,255,.35),
+        inset 0 0 10px rgba(0,245,255,.15);
+}
+
+.circle-card h4{
+    font-size:12px;
+    color:var(--text-soft);
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:1200px){
+
+    .top-cards{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .third-row{
+        grid-template-columns:1fr;
+    }
+
+    .second-row{
+        grid-template-columns:1fr;
+    }
+
+    .bottom-kpis{
+        grid-template-columns:1fr;
+    }
+
+}
+
+@media(max-width:900px){
+
+    .sidebar{
+        display:none;
+    }
+
+    .top-cards{
+        grid-template-columns:1fr;
+    }
+
+    .search-box input{
+        width:180px;
+    }
+
+}
+.page-title h2{
+    font-size:24px;
+}
+
+.page-title span{
+    color:#bdb7e8;
+    font-size:13px;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.search-box{
+    display:flex;
+    align-items:center;
+    background:#1a0935;
+    padding:0 15px;
+    border-radius:30px;
+}
+
+.search-box i{
+    color:#00f5ff;
+}
+
+.search-box input{
+    border:none;
+    background:none;
+}
+
+.profile img{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+}
+
+.mini-card{
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.card-left{
+    flex-shrink:0;
+}
+
+.card-right span{
+    font-size:11px;
+    color:#bdb7e8;
+}
+
+.card-right h2{
+    margin-top:5px;
+    margin-bottom:4px;
+    font-size:22px;
+}
+
+.card-right small{
+    color:#888;
+}
+
+.card-icon{
+    width:55px;
+    height:55px;
+    border-radius:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+}
+
+.cyan{
+    background:rgba(0,245,255,.15);
+    color:#00f5ff;
+}
+
+.green{
+    background:rgba(0,255,136,.15);
+    color:#00ff88;
+}
+
+.orange{
+    background:rgba(255,152,0,.15);
+    color:#ff9800;
+}
+
+.red{
+    background:rgba(255,82,82,.15);
+    color:#ff5252;
+}
+
+.purple{
+    background:rgba(156,39,176,.15);
+    color:#d36fff;
+}
+
+.analytics-cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-top:15px;
+    margin-bottom:15px;
+}
+
+.analytic-card{
+    background:#1a0935;
+    padding:15px;
+    border-radius:15px;
+}
+
+.analytic-card h4{
+    color:#bdb7e8;
+    font-size:12px;
+}
+
+.analytic-card h2{
+    margin-top:10px;
+    color:#00f5ff;
+}
+.graph-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:15px;
+}
+
+.g-card{
+    background:#241046;
+    padding:12px;
+    border-radius:12px;
+}
+
+.g-card span{
+    font-size:11px;
+    color:#a9a2d8;
+}
+
+.g-card h3{
+    margin-top:5px;
+    color:#00f5ff;
+}
+.history-card{
+    padding:12px;
+}
+
+th{
+    padding:7px;
+    font-size:11px;
+}
+
+td{
+    padding:6px;
+    font-size:11px;
+}
+.bottom-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+}
+
+.small-box{
+    background:#1a0935;
+    border-radius:15px;
+    padding:15px;
+}
+
+.small-box h4{
+    font-size:11px;
+    color:#a9a2d8;
+}
+
+.small-box span{
+    display:block;
+    margin-top:8px;
+    font-size:22px;
+    color:#00f5ff;
+}
+.mini-charts{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    margin-top:15px;
+}
+
+.mini-chart-card{
+    background:#1a0935;
+    border-radius:15px;
+    padding:12px;
+}
+
+.mini-chart-card h4{
+    color:#bdb7e8;
+    font-size:12px;
+}
+
+.mini-chart-card h2{
+    color:#00f5ff;
+    margin:5px 0;
+}
+
+.mini-chart-card canvas{
+    height:60px !important;
+}
+.mini-chart-card{
+    background:#1a0935;
+    border-radius:15px;
+    padding:12px;
+    height:180px;
+}
+
+.mini-chart-card h4{
+    font-size:12px;
+    color:#bdb7e8;
+}
+
+
+
+.mini-chart-card h2{
+    font-size:20px;
+    margin:5px 0;
+    color:#00ffff;
+}
+
+.mini-chart-card canvas{
+    width:100%;
+    height:80px !important;
+    display:block;
+}
+.ascii-mini{
+    background:#1a0935;
+    padding:12px;
+    border-radius:12px;
+    font-family: monospace;
+    color:#00ffff;
+}
+
+.ascii-graph{
+    margin-top:8px;
+    font-size:10px;
+    line-height:10px;
+}
+.ascii-mini{
+    background:#241046;
+    border:1px solid #00ffff;
+    border-radius:12px;
+}
+#tdsSpark{
+    color:#00ffff;
+    font-size:16px;
+    font-weight:bold;
+    text-shadow:
+        0 0 5px #00ffff,
+        0 0 10px #00ffff;
+}
+#tdsSpark{
+    color:#00ffff;
+}
+
+#phSpark{
+    color:#00ff88;
+}
+
+#tempSpark{
+    color:#ff9800;
+}
+
+.ascii-graph{
+    font-size:18px;
+    font-weight:bold;
+    letter-spacing:2px;
+}
+polyline {
+  stroke-dasharray: 300;
+  stroke-dashoffset: 300;
+  animation: draw 0.9s ease-out forwards;
+}
+
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.quality-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 25px;
+    border-radius: 20px;
+
+    background: rgba(0,0,0,0.05);
+
+    width: 100%;
+    height: 180px;
+}
+
+/* 🔴 GROS CERCLE */
+.dot {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+
+    background: gray;
+
+    box-shadow: 0 0 25px rgba(0,0,0,0.2);
+    margin-bottom: 15px;
+
+    transition: all 0.3s ease;
+}
+
+/* TEXTE */
+#qualityText {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+/* ===== STATES ===== */
+
+.good .dot {
+    background: #00ff88;
+    box-shadow: 0 0 40px #00ff88;
+    transform: scale(1.05);
+}
+
+.warning .dot {
+    background: #ffb703;
+    box-shadow: 0 0 40px #ffb703;
+    transform: scale(1.05);
+}
+
+.bad .dot {
+    background: #ff3b30;
+    box-shadow: 0 0 45px #ff3b30;
+    transform: scale(1.1);
+    animation: pulse 1s infinite;
+}
+
+/* ⚠️ animation danger */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+#simBtn {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+}
+</style>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- ================= SIDEBAR ================= -->
+
+    <aside class="sidebar">
+
+    <div class="logo">
+        💧 LAU_Tech
+    </div>
+
+    <nav class="menu">
+
+    <div class="quality-indicator" id="waterQuality">
+        <span class="dot"></span>
+        <span id="qualityText">--</span>
+    </div>
+
+    </nav>
+	
+
+    <div class="status">
+        <span class="dot"></span>
+        ONLINE
+    </div>
+
+</aside>
+
+    <!-- ================= MAIN ================= -->
+
+    <main class="main">
+
+        <!-- TOP BAR -->
+
+       <header class="topbar">
+
+    <div class="page-title">
+
+        <h2>MONITORING DE LA QUALITE DE L'EAU</h2>
+
+        
+
+    </div>
+
+    <div class="top-actions">
+
+      <div class="notification">
+
+            <i class="fa fa-bell"></i>
+
+        </div>
+
+        <div class="profile">
+            <p>ADMIN</p>
+            
+
+        </div>
+
+    </div>
+
+</header>
+        <!-- ================= KPI CARDS ================= -->
+
+        <section class="top-cards">
+
+    <!-- TDS -->
+
+    <div class="mini-card">
+
+        <div class="card-left">
+
+            <div class="card-icon cyan">
+
+                <i class="fa-solid fa-droplet"></i>
+
+            </div>
+
+        </div>
+
+        <div class="card-right">
+
+            <span>--- TDS ---</span>
+
+            <h2 id="tdsValue">
+                0 ppm
+            </h2>
+			<div class="mini-progress">
+				<div id="tdsBar"></div>
+			</div>
+
+            <small>Niveau Minerales</small>
+
+        </div>
+
+    </div>
+
+    <!-- PH -->
+
+    <div class="mini-card">
+
+        <div class="card-left">
+
+            <div class="card-icon green">
+
+                <i class="fa-solid fa-flask"></i>
+
+            </div>
+
+        </div>
+
+        <div class="card-right">
+
+            <span>--- PH ---</span>
+
+            <h2 id="phValue">
+                7.00
+            </h2>
+			<div class="mini-progress">
+				<div id="phBar"></div>
+			</div>
+
+            <small>Niveau d'acidité</small>
+
+        </div>
+
+    </div>
+
+    <!-- TEMP -->
+
+    <div class="mini-card">
+
+        <div class="card-left">
+
+            <div class="card-icon orange">
+
+                <i class="fa-solid fa-temperature-half"></i>
+
+            </div>
+
+        </div>
+
+        <div class="card-right">
+
+            <span>--- °C ----</span>
+
+            <h2 id="tempValue">
+                0°C
+            </h2>
+			<div class="mini-progress">
+				<div id="tempBar"></div>
+			</div>
+
+            <small>Témperature de l'eau</small>
+
+        </div>
+
+    </div>
+
+    <!-- STATUS -->
+
+    <div class="mini-card">
+
+        <div class="card-left">
+
+            <div class="card-icon red">
+
+                <i class="fa-solid fa-shield-heart"></i>
+
+            </div>
+
+        </div>
+
+        <div class="card-right">
+
+            <span>STATUS</span>
+
+            <h2 id="status">
+
+                NORMAL
+
+            </h2>
+
+            <small>Water Quality</small>
+
+        </div>
+
+    </div>
+
+    <!-- STATION -->
+
+
+</section>
+<section class="mini-charts">
+
+    <div class="ascii-mini">
+    <div class="ascii-value" id="tdsAscii">0 ppm</div>
+    <pre class="ascii-graph" id="tdsSpark"></pre>
+	</div>
+
+	<div class="ascii-mini">
+    <div class="ascii-value" id="phAscii">0</div>
+    <pre class="ascii-graph" id="phSpark"></pre>
+	</div>
+
+	<div class="ascii-mini">
+    <div class="ascii-value" id="tempAscii">0 °C</div>
+    <pre class="ascii-graph" id="tempSpark"></pre>
+	</div>
+
+</section>
+
+<section class="third-row">
+
+            <!-- HISTORY -->
+
+            <div class="history-card">
+
+                <div class="section-title">
+
+                    Measurement History
+
+                </div>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>Time</th>
+
+                            <th>TDS</th>
+
+                            <th>pH</th>
+
+                            <th>Temp</th>
+
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="historyTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <!-- MAP -->
+
+            <div class="map-card">
+
+                <div class="section-title">
+
+                    GPS Location
+
+                </div>
+
+                <div id="map"></div>
+
+            </div>
+
+        </section>
+      <!-- ================= BIG CHART ================= -->
+
+        <section class="big-chart-card">
+
+            <div class="section-title">
+
+                Water Quality Analytics
+
+            </div>
+
+            <canvas id="historyChart"></canvas>
+
+        </section>
+
+        <!-- ================= SECOND ROW ================= -->
+
+        <section class="second-row">
+
+            <!-- LEFT PANEL -->
+
+            <div class="left-panel">
+
+                <div class="panel-card">
+
+                    <div class="section-title">
+                        Water Quality Statistics
+                    </div>
+
+                    <div class="stats-list">
+
+                        <div class="stat-item">
+
+                            <span>TDS Level</span>
+
+                            <span id="tdsState">
+                                Normal
+                            </span>
+
+                        </div>
+
+                        <div class="stat-item">
+
+                            <span>pH Level</span>
+
+                            <span id="phState">
+                                Normal
+                            </span>
+
+                        </div>
+
+                        <div class="stat-item">
+
+                            <span>Temperature</span>
+
+                            <span id="tempState">
+                                Normal
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- RIGHT PANEL -->
+
+            <div class="right-panel">
+
+                <div class="panel-card">
+
+                    <div class="section-title">
+                        Water Information
+                    </div>
+
+                    <p>
+
+                        Real-time monitoring system
+                        connected to Firebase
+                        database.
+
+                    </p>
+
+                    <p>
+
+                        Measurements are updated
+                        automatically from sensors.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ================= THIRD ROW ================= -->
+
+        
+        <!-- ================= BOTTOM KPI ================= -->
+
+        <section class="bottom-stats">
+
+    <div class="small-box">
+        <h4>TDS INDEX</h4>
+        <span id="tdsCircle">0%</span>
+    </div>
+
+    <div class="small-box">
+        <h4>PH INDEX</h4>
+        <span id="phCircle">0%</span>
+    </div>
+
+    <div class="small-box">
+        <h4>TEMP INDEX</h4>
+        <span id="tempCircle">0%</span>
+    </div>
+
+</section>
+
+    </main>
+
+</div>
+<script>
+
+/* ===============================
+   SUPABASE CONFIG
+================================ */
+
+const SUPABASE_URL =
+"https://ikmkgpnyfxiahymbhyvr.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_j7uBDQ1ryCuaiibOKjoOig_UjFzDVMG";
+
+const sb = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+/* ===============================
+   VARIABLES
+================================ */
+
+let historyData = [];
+let tdsHistory = [];
+let phHistory = [];
+let tempHistory = [];
+
+let marker;
+let lastId = 0;
+
+/* ===============================
+   CHART.JS
+================================ */
+
+const ctx =
+document.getElementById("historyChart");
+
+const historyChart =
+new Chart(ctx,{
+
+    type:"line",
+
+    data:{
+
+        labels:[],
+
+        datasets:[
+
+        {
+            label:"TDS",
+            data:[],
+            borderColor:"#00ffff",
+            backgroundColor:"transparent",
+            borderWidth:3,
+            tension:.4
+        },
+
+        {
+            label:"pH",
+            data:[],
+            borderColor:"#00ff88",
+            backgroundColor:"transparent",
+            borderWidth:3,
+            tension:.4
+        },
+
+        {
+            label:"Température",
+            data:[],
+            borderColor:"#ff9800",
+            backgroundColor:"transparent",
+            borderWidth:3,
+            tension:.4
+        }
+
+        ]
+
+    },
+
+    options:{
+
+        responsive:true,
+
+        plugins:{
+            legend:{
+                labels:{
+                    color:"white"
+                }
+            }
+        },
+
+        scales:{
+
+            x:{
+                ticks:{
+                    color:"white"
+                }
+            },
+
+            y:{
+                ticks:{
+                    color:"white"
+                }
+            }
+
+        }
+
+    }
+
+});
+
+/* ===============================
+   MAP
+================================ */
+
+const lat = -4.325;
+const lon = 15.322;
+
+const map =
+L.map('map').setView(
+[lat,lon],
+13
+);
+
+L.tileLayer(
+'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+{
+maxZoom:19
+}
+).addTo(map);
+
+marker =
+L.marker([lat,lon])
+.addTo(map);
+
+marker.bindPopup(
+"💧 Water Quality Station"
+);
+
+/* ===============================
+   STATUS
+================================ */
+function getWaterQuality(ph, tds, temp) {
+
+    const p = Number(ph);
+    const t = Number(tds);
+    const c = Number(temp);
+
+    if (!isFinite(p) || !isFinite(t) || !isFinite(c)) {
+        return "warning";
+    }
+
+    let score = 100;
+
+    // pH
+    if (p < 6 || p > 9) score -= 50;
+    else if (p < 6.5 || p > 8.5) score -= 20;
+
+    // TDS
+    if (t > 1500) score -= 60;
+    else if (t > 1000) score -= 30;
+    else if (t > 600) score -= 10;
+
+    // température
+    if (c > 45 || c < 5) score -= 40;
+    else if (c > 35 || c < 10) score -= 20;
+
+    if (score >= 80) return "good";
+    if (score >= 50) return "warning";
+    return "bad";
+}
+
+function getStatus(ph, tds, temp) {
+
+    const q = getWaterQuality(ph, tds, temp);
+
+    if (q === "good") return { text: "NORMAL", color: "#00ff88" };
+    if (q === "warning") return { text: "WARNING", color: "#ffd600" };
+    return { text: "DANGER", color: "#ff4444" };
+}
+/* ===============================
+   TABLE
+================================ */
+
+function renderTable(){
+
+    const table =
+    document.getElementById(
+    "historyTable"
+    );
+
+    table.innerHTML="";
+
+    historyData.forEach(item=>{
+
+        table.innerHTML += `
+
+        <tr>
+
+            <td>${item.date}</td>
+
+            <td>${item.time}</td>
+
+            <td>${item.tds.toFixed(2)}</td>
+
+            <td>${item.ph.toFixed(2)}</td>
+
+            <td>${item.temp.toFixed(2)} °C</td>
+
+            <td
+            style="
+            color:${item.color};
+            font-weight:bold;
+            ">
+            ${item.status}
+            </td>
+
+        </tr>
+
+        `;
+
+    });
+
+}
+
+/* ===============================
+   CIRCLE KPI
+================================ */
+
+function updateCircle(
+id,
+value,
+max
+){
+
+    const percent =
+    Math.min(
+    (value/max)*100,
+    100
+    );
+
+    document
+    .getElementById(id)
+    .innerHTML =
+    Math.round(percent)
+    +"%";
+
+}
+
+function safeNumber(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+}
+/* ===============================
+   FIREBASE LISTENER
+================================ */
+
+async function loadLatestData() {
+
+    const { data, error } = await sb
+        .from("sensor_data")
+        .select("*")
+        .order("id", { ascending: false })
+        .limit(1);
+
+    if (error) {
+        console.error("Supabase Error:", error);
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        console.log("Aucune donnée");
+        return;
+    }
+
+    const latest = data[0];
+ // éviter les doublons
+	if (latest.id === lastId) return;
+
+	lastId = latest.id;
+    const tds = parseFloat(latest.tds ?? 0);
+    const ph = parseFloat(latest.ph ?? 0);
+    const temp = parseFloat(latest.temperature ?? 0);
+
+    /* ===================
+       KPI VALUES
+    ==================== */
+
+    document.getElementById("tdsValue").innerHTML =
+        tds.toFixed(0) + " ppm";
+
+    document.getElementById("phValue").innerHTML =
+        ph.toFixed(2);
+
+    document.getElementById("tempValue").innerHTML =
+        temp.toFixed(1) + " °C";
+
+    /* ===================
+       BARS
+    ==================== */
+
+    document.getElementById("tdsBar").style.width =
+        Math.min((tds / 2000) * 100, 100) + "%";
+
+    document.getElementById("phBar").style.width =
+        Math.min((ph / 14) * 100, 100) + "%";
+
+    document.getElementById("tempBar").style.width =
+        Math.min((temp / 50) * 100, 100) + "%";
+
+    /* ===================
+       STATUS
+    ==================== */
+
+    const result = getStatus(ph, tds, temp);
+
+    document.getElementById("status").innerHTML =
+        result.text;
+
+    document.getElementById("status").style.color =
+        result.color;
+
+    /* ===================
+       STATES
+    ==================== */
+
+    document.getElementById("tdsState").innerHTML =
+        tds <= 1000 ? "Normal" : "High";
+
+    document.getElementById("phState").innerHTML =
+        (ph >= 6.5 && ph <= 8.5)
+            ? "Normal"
+            : "Critical";
+
+    document.getElementById("tempState").innerHTML =
+        temp <= 30 ? "Normal" : "High";
+
+    /* ===================
+       CHART DATA
+    ==================== */
+
+    const time = new Date().toLocaleTimeString();
+
+    historyChart.data.labels.push(time);
+    historyChart.data.datasets[0].data.push(tds);
+    historyChart.data.datasets[1].data.push(ph);
+    historyChart.data.datasets[2].data.push(temp);
+
+    tdsHistory.push(tds);
+    phHistory.push(ph);
+    tempHistory.push(temp);
+
+    if (tdsHistory.length > 20) {
+        tdsHistory.shift();
+        phHistory.shift();
+        tempHistory.shift();
+    }
+
+    if (historyChart.data.labels.length > 20) {
+
+        historyChart.data.labels.shift();
+
+        historyChart.data.datasets.forEach(ds => {
+            ds.data.shift();
+        });
+    }
+
+    historyChart.update();
+
+    /* ===================
+       SPARKLINES
+    ==================== */
+
+    document.getElementById("tdsAscii").textContent =
+        tds.toFixed(0) + " ppm";
+
+    document.getElementById("phAscii").textContent =
+        ph.toFixed(2);
+
+    document.getElementById("tempAscii").textContent =
+        temp.toFixed(1) + " °C";
+
+    document.getElementById("tdsSpark").innerHTML =
+        financialSparkline(tdsHistory);
+
+    document.getElementById("phSpark").innerHTML =
+        financialSparkline(phHistory);
+
+    document.getElementById("tempSpark").innerHTML =
+        financialSparkline(tempHistory);
+
+    /* ===================
+       WATER QUALITY
+    ==================== */
+
+    const quality =
+        getWaterQuality(ph, tds, temp);
+
+    const indicator =
+        document.getElementById("waterQuality");
+
+    const text =
+        document.getElementById("qualityText");
+
+    indicator.classList.remove(
+        "good",
+        "warning",
+        "bad"
+    );
+
+    indicator.classList.add(quality);
+
+    if (quality === "good")
+        text.textContent = "NORMAL";
+
+    if (quality === "warning")
+        text.textContent = "ATTENTION";
+
+    if (quality === "bad")
+        text.textContent = "MAUVAIS";
+
+    /* ===================
+       HISTORY TABLE
+    ==================== */
+
+    const now = new Date();
+
+    historyData.unshift({
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString(),
+        tds,
+        ph,
+        temp,
+        status: result.text,
+        color: result.color
+    });
+
+    if (historyData.length > 3) {
+        historyData.pop();
+    }
+
+    renderTable();
+
+    /* ===================
+       MAP
+    ==================== */
+
+    marker.setPopupContent(`
+        <b>💧 Water Station</b><br>
+        TDS : ${tds.toFixed(2)} ppm<br>
+        pH : ${ph.toFixed(2)}<br>
+        Temp : ${temp.toFixed(2)} °C
+    `);
+
+    /* ===================
+       KPI CIRCLES
+    ==================== */
+
+    updateCircle("tdsCircle", tds, 2000);
+    updateCircle("phCircle", ph, 14);
+    updateCircle("tempCircle", temp, 50);
+}
+
+/* ===================
+   AUTO REFRESH
+=================== */
+
+loadLatestData();
+
+setInterval(loadLatestData, 2000);
+
+// ================= MINI CHARTS =================
+
+function sparkline(data){
+
+    const chars = "▁▂▃▄▅▆▇█";
+
+    if(data.length < 2) return "";
+
+    const recent = data.slice(-20);
+
+    let min = Math.min(...recent);
+    let max = Math.max(...recent);
+
+    // Forcer une plage minimale
+    if((max - min) < 20){
+        max = min + 20;
+    }
+
+    return recent.map(v => {
+
+        let index = Math.round(
+            ((v - min) / (max - min))
+            * (chars.length - 1)
+        );
+
+        index = Math.max(
+            0,
+            Math.min(index, chars.length - 1)
+        );
+
+        return chars[index];
+
+    }).join("");
+
+}
+function financialSparkline(data) {
+
+    if (!data || data.length < 2) return "";
+
+    const width = 120;
+    const height = 35;
+
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+
+    const first = data[0];
+    const last = data[data.length - 1];
+
+    // 🔥 Couleur dynamique (hausse / baisse)
+    const strokeColor = last >= first ? "#00ff88" : "#ff4d4d";
+    const fillColor = last >= first ? "rgba(0,255,136,0.15)" : "rgba(255,77,77,0.15)";
+
+    const points = data.map((v, i) => {
+
+        const x = (i / (data.length - 1)) * width;
+
+        const y = height -
+            ((v - min) / ((max - min) || 1)) * height;
+
+        return `${x},${y}`;
+    }).join(" ");
+
+    return `
+<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+
+    <!-- AREA (remplissage) -->
+    <polygon
+        points="${points} ${width},${height} 0,${height}"
+        fill="${fillColor}"
+    />
+
+    <!-- LINE -->
+    <polyline
+        fill="none"
+        stroke="${strokeColor}"
+        stroke-width="2.5"
+        stroke-linejoin="round"
+        stroke-linecap="round"
+        points="${points}"
+    />
+</svg>
+`;
+}
+
+function getWaterQuality(ph, tds, temp) {
+
+    const p = Number(ph);
+    const t = Number(tds);
+    const c = Number(temp);
+
+    if (!isFinite(p) || !isFinite(t) || !isFinite(c)) {
+        return "warning";
+    }
+
+    let score = 100;
+
+    // pH
+    if (p < 6 || p > 9) score -= 50;
+    else if (p < 6.5 || p > 8.5) score -= 20;
+
+    // TDS
+    if (t > 1500) score -= 60;
+    else if (t > 1000) score -= 30;
+    else if (t > 600) score -= 10;
+
+    // température
+    if (c > 45 || c < 5) score -= 40;
+    else if (c > 35 || c < 10) score -= 20;
+
+    if (score >= 80) return "good";
+    if (score >= 50) return "warning";
+    return "bad";
+}
+</script>
+</body>
+</html>
