@@ -1543,25 +1543,20 @@ async function loadLatestData() {
        STATUS
     ==================== */
 
-    const result = getStatus(ph, tds, temp);
+    const result = getTDSInterpretation(tds);
 
-    document.getElementById("status").innerHTML =
-        result.text;
-
-    document.getElementById("status").style.color =
-        result.color;
+    document.getElementById("status").innerHTML = result.text;
+	document.getElementById("status").style.color = result.color;
 
     /* ===================
        STATES
     ==================== */
 
     document.getElementById("tdsState").innerHTML =
-        tds <= 1000 ? "Normal" : "High";
+    getTDSInterpretation(tds).text;
 
     document.getElementById("phState").innerHTML =
-        (ph >= 6.5 && ph <= 8.5)
-            ? "Normal"
-            : "Critical";
+    getPHInterpretation(ph);
 
     document.getElementById("tempState").innerHTML =
         temp <= 30 ? "Normal" : "High";
@@ -1624,8 +1619,8 @@ async function loadLatestData() {
        WATER QUALITY
     ==================== */
 
-    const quality =
-        getWaterQuality(ph, tds, temp);
+	const quality =
+	getTDSInterpretation(tds).quality;
 
     const indicator =
         document.getElementById("waterQuality");
@@ -1812,6 +1807,82 @@ function getWaterQuality(ph, tds, temp) {
     if (score >= 80) return "good";
     if (score >= 50) return "warning";
     return "bad";
+}
+function getTDSInterpretation(tds){
+
+    if(tds >= 0 && tds <= 50){
+        return {
+            text:"💧 Eau très pure",
+            color:"#00e5ff",
+            quality:"good"
+        };
+    }
+
+    if(tds <= 150){
+        return {
+            text:"💧 Eau pure",
+            color:"#00ff88",
+            quality:"good"
+        };
+    }
+
+    if(tds <= 300){
+        return {
+            text:"💧 Eau potable de bonne qualité",
+            color:"#4caf50",
+            quality:"good"
+        };
+    }
+
+    if(tds <= 500){
+        return {
+            text:"⚠ Eau potable acceptable",
+            color:"#ffd600",
+            quality:"warning"
+        };
+    }
+
+    if(tds <= 1000){
+        return {
+            text:"⚠ Eau fortement minéralisée",
+            color:"#ff9800",
+            quality:"warning"
+        };
+    }
+
+    if(tds <= 1500){
+        return {
+            text:"❌ Eau déconseillée",
+            color:"#ff5722",
+            quality:"bad"
+        };
+    }
+
+    return {
+        text:"🚨 Eau impropre à la consommation",
+        color:"#ff0000",
+        quality:"bad"
+    };
+}
+function getPHInterpretation(ph){
+
+    if(ph < 4){
+        return "Très acide";
+    }
+
+    if(ph < 6.5){
+        return "Acide";
+    }
+
+    if(ph <= 8.5){
+        return "Neutre / Conforme";
+    }
+
+    if(ph <= 10){
+        return "Basique";
+    }
+
+    return "Très basique";
 }
 </script>
 </body>
